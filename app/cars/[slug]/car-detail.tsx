@@ -317,16 +317,16 @@ export default function CarDetail({
                 {/* FLOATING BUTTONS */}
                 <button
                   onClick={handlePrev}
-                  className="absolute left-3 top-1/2 z-20 flex h-[54px] w-[54px] -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-zinc-900/20 bg-white/90 text-zinc-900 shadow-[0_8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.08] hover:bg-white md:-left-6"
+                  className="absolute left-3 top-1/2 z-20 flex h-10 w-10 md:h-[54px] md:w-[54px] -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-zinc-900/20 bg-white/90 text-zinc-900 shadow-[0_8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.08] hover:bg-white md:-left-6"
                 >
-                  <ChevronLeft className="h-6 w-6" />
+                  <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
                 </button>
 
                 <button
                   onClick={handleNext}
-                  className="absolute right-3 top-1/2 z-20 flex h-[54px] w-[54px] -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-zinc-900/20 bg-white/90 text-zinc-900 shadow-[0_8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.08] hover:bg-white md:-right-6"
+                  className="absolute right-3 top-1/2 z-20 flex h-10 w-10 md:h-[54px] md:w-[54px] -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-zinc-900/20 bg-white/90 text-zinc-900 shadow-[0_8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.08] hover:bg-white md:-right-6"
                 >
-                  <ChevronRight className="h-6 w-6" />
+                  <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
                 </button>
 
               </div>
@@ -427,7 +427,7 @@ export default function CarDetail({
                         {item.label}
                       </span>
 
-                      <span className="mt-1 whitespace-nowrap text-center text-sm font-semibold text-zinc-900 md:text-[15px]">
+                      <span className="mt-1 break-words text-center text-sm font-semibold text-zinc-900 md:text-[15px]">
                         {item.value}
                       </span>
                     </div>

@@ -145,9 +145,9 @@ export function Lightbox({ isOpen, onClose, images, initialIndex }: LightboxProp
               e.stopPropagation()
               handlePrev()
             }}
-            className="absolute left-0 md:-left-16 z-20 flex h-14 w-14 -translate-y-1/2 top-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+            className="absolute left-2 md:-left-16 z-20 flex h-10 w-10 md:h-14 md:w-14 -translate-y-1/2 top-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
           >
-            <ChevronLeft className="h-8 w-8" />
+            <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
           </button>
 
           <button
@@ -155,9 +155,9 @@ export function Lightbox({ isOpen, onClose, images, initialIndex }: LightboxProp
               e.stopPropagation()
               handleNext()
             }}
-            className="absolute right-0 md:-right-16 z-20 flex h-14 w-14 -translate-y-1/2 top-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+            className="absolute right-2 md:-right-16 z-20 flex h-10 w-10 md:h-14 md:w-14 -translate-y-1/2 top-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
           >
-            <ChevronRight className="h-8 w-8" />
+            <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />
           </button>
         </div>
 

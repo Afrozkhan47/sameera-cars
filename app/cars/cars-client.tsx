@@ -2,7 +2,7 @@
 import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion"
 import {
   ShieldCheck,
   CheckCircle2,
@@ -187,7 +187,7 @@ function FilterPill({
         "relative shrink-0 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300",
         isActive
           ? "bg-zinc-900 text-white shadow-md"
-          : "text-zinc-600 hover:bg-white/80 hover:text-zinc-900"
+          : "text-zinc-600 hover:-translate-y-[2px] hover:bg-white/80 hover:text-zinc-900 hover:shadow-md"
       )}
     >
       {filter.label}
@@ -337,102 +337,137 @@ export default function CarsClient({
     }, 6000)
     return () => clearInterval(interval)
   }, [heroCars])
+
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+
+  const springConfig = { damping: 50, stiffness: 400 }
+  const smoothX = useSpring(mouseX, springConfig)
+  const smoothY = useSpring(mouseY, springConfig)
+
+  const headingX = useTransform(smoothX, [-0.5, 0.5], [-3, 3])
+  const headingY = useTransform(smoothY, [-0.5, 0.5], [-3, 3])
+
+  const orbX = useTransform(smoothX, [-0.5, 0.5], [-12, 12])
+  const orbY = useTransform(smoothY, [-0.5, 0.5], [-12, 12])
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width - 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5
+    mouseX.set(x)
+    mouseY.set(y)
+  }
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#ece9e4] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/40 via-[#ece9e4] to-[#ece9e4] text-zinc-900 after:pointer-events-none after:absolute after:inset-0 after:z-0 after:opacity-[0.025] after:mix-blend-overlay after:bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiAvPgo8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjMDAwIiAvPgo8L3N2Zz4=')]">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-[#d4b278]/20 blur-[140px]" />
-        <div className="absolute top-[20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-[#7d8797]/10 blur-[160px]" />
-        <div className="absolute bottom-[-10%] left-[20%] h-[500px] w-[500px] rounded-full bg-white/30 blur-[160px]" />
-      </div>
-      <section className="relative z-10 overflow-hidden bg-gradient-to-b from-[#f8f6f1] via-[#f3f0ea] to-[#ece9e4]">
-        <div className="mx-auto grid min-h-[88vh] max-w-7xl items-center gap-20 px-6 py-20 lg:grid-cols-2">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#ece9e4] text-zinc-900">
+      <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.04] mix-blend-overlay bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiAvPgo8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjMDAwIiAvPgo8L3N2Zz4=')]" />
+
+      <section
+        className="relative z-10 overflow-hidden border-b border-zinc-200/50 shadow-[0_8px_30px_rgba(0,0,0,0.02)]"
+        onMouseMove={handleMouseMove}
+      >
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[800px] bg-white/40 blur-[120px]" />
+
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            className="relative z-10"
+            style={{ x: orbX, y: orbY }}
+            className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-[#d4b278]/20 blur-[140px]"
+          />
+          <motion.div
+            style={{ x: orbX, y: orbY }}
+            className="absolute top-[20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-[#7d8797]/15 blur-[160px]"
+          />
+
+          <motion.div
+            style={{ x: orbX, y: orbY }}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none text-[100vh] font-bold leading-none text-zinc-900 opacity-5 blur-[2px]"
           >
-            <div className="mb-8 flex flex-wrap gap-3">
-              <div className="flex items-center gap-2 rounded-full border border-white/50 bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-700 shadow-lg backdrop-blur-xl">
-                <ShieldCheck className="h-4 w-4 text-[#d4b278]" />
-                Verified Quality
-              </div>
-              <div className="flex items-center gap-2 rounded-full border border-white/50 bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-700 shadow-lg backdrop-blur-xl">
-                <CheckCircle2 className="h-4 w-4 text-[#d4b278]" />
-                Transparent Pricing
-              </div>
-            </div>
-            <h1 className="max-w-xl text-[64px] font-semibold leading-[0.9] tracking-[-0.06em] text-zinc-950 md:text-[88px] lg:text-[110px]">
-              SAMEERA
-              <br />
-              <span className="bg-gradient-to-r from-zinc-950 via-zinc-700 to-[#8d7a55] bg-clip-text text-transparent">
-                CARS
-              </span>
-            </h1>
-            <p className="mt-10 max-w-lg text-xl leading-relaxed text-zinc-500">
-              Pre-owned vehicles with verified inspection,
-              transparent pricing, and a luxury buying experience.
-            </p>
-            <div className="mt-12 flex items-center gap-5">
-              <div className="flex items-center gap-2 text-sm font-medium text-zinc-600">
-                <Sparkles className="h-4 w-4 text-[#d4b278]" />
-                Trusted by hundreds of Pune buyers
-              </div>
-            </div>
+            S
           </motion.div>
+        </div>
+
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-center px-6 pt-16 pb-12 text-center lg:pt-20 lg:pb-16 relative z-10">
           <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2 }}
-            className="relative"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+            }}
+            className="flex flex-col items-center"
           >
-            <div className="absolute inset-0 rounded-[40px] bg-gradient-to-tr from-[#d4b278]/20 via-transparent to-white/30 blur-3xl" />
-            <div className="relative h-[560px] min-h-[560px] w-full overflow-hidden rounded-[40px] isolate border border-white/50 bg-white/40 shadow-[0_20px_80px_rgba(0,0,0,0.08)] backdrop-blur-2xl">
-              <AnimatePresence mode="sync">
-                {heroCars.length > 0 && (
-                  <motion.div
-                    key={currentSlide}
-                    initial={{
-                      opacity: 0,
-                      scale: 1,
-                    }}
-                    animate={{
-                      opacity: 1,
-                      scale: 1.06,
-                    }}
-                    exit={{
-                      opacity: 0,
-                      scale: 1.06,
-                    }}
-                    transition={{
-                      opacity: { duration: 1.2, ease: "easeInOut" },
-                      scale: { duration: 6, ease: "linear" },
-                    }}
-                    className="absolute inset-0 h-full w-full"
-                  >
-                    <Image
-                      src={getCarImage(heroCars[currentSlide])}
-                      alt="Featured Car"
-                      fill
-                      priority
-                      sizes="(max-width:1024px) 100vw, 50vw"
-                      className="object-cover contrast-110 saturate-110"
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            </div>
+            <motion.h1
+              style={{ x: headingX, y: headingY, textShadow: "0 2px 10px rgba(0,0,0,0.05)" }}
+              className="text-4xl min-[375px]:text-5xl font-semibold leading-[0.85] tracking-[-0.06em] text-zinc-950 md:text-7xl lg:text-[80px]"
+            >
+              <motion.span
+                variants={{
+                  hidden: { opacity: 0, y: 15 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: premiumEasing } }
+                }}
+                className="block"
+              >
+                SAMEERA
+              </motion.span>
+              <motion.span
+                variants={{
+                  hidden: { opacity: 0, y: 15 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: premiumEasing } }
+                }}
+                className="block bg-gradient-to-r from-[#c5a666] via-[#e8d1a1] to-[#c5a666] bg-[length:200%_auto] bg-clip-text text-transparent -mt-1 drop-shadow-sm [-webkit-text-stroke:1px_rgba(0,0,0,0.15)]"
+                animate={{
+                  backgroundPosition: ["0% center", "-200% center"],
+                }}
+                transition={{
+                  duration: 9,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+              >
+                CARS
+              </motion.span>
+            </motion.h1>
+
+            <motion.p
+              variants={{
+                hidden: { opacity: 0 },
+                visible: { opacity: 1, transition: { duration: 1, ease: premiumEasing } }
+              }}
+              className="mt-6 max-w-[650px] text-[17px] leading-[1.6] text-zinc-500 md:text-[19px]"
+            >
+              Browse verified pre-owned cars with transparent pricing, inspected quality, and vehicles that fit every lifestyle and budget.
+            </motion.p>
+
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: premiumEasing } }
+              }}
+              className="mt-8 flex flex-wrap items-center justify-center gap-3 text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-600 md:gap-5 md:text-[12px]"
+            >
+              {[
+                { text: "Verified Vehicles", icon: ShieldCheck },
+                { text: "Transparent Pricing", icon: CheckCircle2 },
+                { text: "RC Checked", icon: CheckCircle2 },
+                { text: "Test Drive Available", icon: CheckCircle2 }
+              ].map((badge, idx) => (
+                <div
+                  key={idx}
+                  className="group relative overflow-hidden rounded-[20px] border border-white/60 bg-white/40 px-4 py-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] backdrop-blur-md transition-all duration-500 hover:-translate-y-[2px] hover:bg-white/60 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+                >
+                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
+                  <span className="relative flex items-center gap-2">
+                    <badge.icon className="h-3.5 w-3.5 text-[#b89b5e]" strokeWidth={2.5} />
+                    {badge.text}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
           </motion.div>
         </div>
       </section>
-      <div className="relative z-20 mx-auto -mt-6 mb-8 flex max-w-5xl flex-wrap items-center justify-center gap-6 px-6 text-[12px] font-semibold tracking-wider text-zinc-500 uppercase md:text-[13px] md:gap-10">
-        <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#d4b278]" /> Verified Vehicles</span>
-        <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#d4b278]" /> Transparent Pricing</span>
-        <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#d4b278]" /> Test Drive Available</span>
-        <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#d4b278]" /> RC Checked</span>
-      </div>
-      <section className="sticky top-6 z-40 mx-auto max-w-6xl px-6">
+      <section id="catalogue" className="sticky top-6 z-40 mx-auto max-w-6xl px-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
 
           <div className="flex flex-1 min-w-0 items-center gap-2 rounded-[32px] border border-white/80 bg-white/60 py-2 pl-2 pr-3 shadow-[0_8px_30px_rgba(0,0,0,0.04)] backdrop-blur-3xl">
@@ -499,74 +534,79 @@ export default function CarsClient({
         </div>
       </section>
       <section className="relative z-10 mx-auto max-w-7xl px-6 py-16">
-        <div className="mb-14 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+        <div className="mb-16 flex flex-col justify-between gap-8 border-b border-zinc-200/70 pb-8 md:flex-row md:items-end">
           <div>
-            <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#d4b278]">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Updated Today
+
+            <h1 className="text-5xl font-semibold tracking-[-0.06em] text-zinc-950 md:text-6xl">
+              Find Your Next Car
+            </h1>
+
+            <p className="mt-4 max-w-xl text-lg leading-relaxed text-zinc-500">
+              Browse inspected pre-owned vehicles from trusted brands.
             </p>
-            <h2 className="mt-4 text-5xl font-semibold tracking-[-0.05em] text-zinc-950">
-              Check Out Our Catalogue
-            </h2>
-            <p className="mt-3 text-lg text-zinc-600">
-              Hand-picked, inspected and verified vehicles.
-            </p>
+
           </div>
-          <div className="text-left md:text-right">
-            <p className="text-4xl font-semibold tracking-[-0.05em] text-zinc-950">
-              {visibleCars.length}
-            </p>
-            <p className="text-sm font-medium text-zinc-500">
-              Vehicles Available
-            </p>
+
+          <div className="flex flex-col items-start md:items-end">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold tracking-[-0.05em] text-[#b48a47] md:text-4xl">
+                {visibleCars.length}
+              </span>
+
+              <span className="text-sm font-medium text-zinc-500">
+                Vehicles Available
+              </span>
+            </div>
           </div>
         </div>
         {isLoading ? (
           <div className="grid grid-cols-1 gap-12 md:grid-cols-2 xl:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-        ) : visibleCars.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-20 text-center"
-          >
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100 mb-6">
-              <SearchX className="h-8 w-8 text-zinc-400" />
-            </div>
-            <h3 className="text-2xl font-semibold text-zinc-900 mb-2">No vehicles found</h3>
-            <p className="text-zinc-500 mb-8 max-w-sm">
-              Try another brand, category or search term to find what you're looking for.
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery("")
-                setActiveFilter("all")
-                setSelectedBrand("all")
-              }}
-              className="rounded-full bg-zinc-900 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-zinc-800 shadow-md hover:scale-105 active:scale-95"
-            >
-              Clear Filters
-            </button>
-          </motion.div>
-        ) : (
-          <AnimatePresence mode="sync">
-            <motion.div
-              key={activeFilter + searchQuery + selectedBrand}
-              variants={pageVariants}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              className="grid grid-cols-1 gap-12 md:grid-cols-2 xl:grid-cols-3"
-            >
-              {visibleCars.map((car) => (
-                <CarCard key={car._id} car={car} />
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <SkeletonCard key={i} />
               ))}
+            </div>
+          ) : visibleCars.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-20 text-center"
+            >
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100 mb-6">
+                <SearchX className="h-8 w-8 text-zinc-400" />
+              </div>
+              <h3 className="text-2xl font-semibold text-zinc-900 mb-2">No vehicles found</h3>
+              <p className="text-zinc-500 mb-8 max-w-sm">
+                Try another brand, category or search term to find what you're looking for.
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery("")
+                  setActiveFilter("all")
+                  setSelectedBrand("all")
+                }}
+                className="rounded-full bg-zinc-900 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-zinc-800 shadow-md hover:scale-105 active:scale-95"
+              >
+                Clear Filters
+              </button>
             </motion.div>
-          </AnimatePresence>
-        )}
+          ) : (
+            <AnimatePresence mode="sync">
+              <motion.div
+                key={activeFilter + searchQuery + selectedBrand}
+                variants={pageVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                className="grid grid-cols-1 gap-12 md:grid-cols-2 xl:grid-cols-3"
+              >
+                {visibleCars.map((car) => (
+                  <CarCard key={car._id} car={car} />
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          )}
       </section>
+
     </main>
   )
 }

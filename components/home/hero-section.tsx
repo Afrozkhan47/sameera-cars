@@ -515,7 +515,7 @@ export default function HeroSection() {
 
             <motion.h1
               variants={textItemVariants}
-              className="text-[2.6rem] sm:text-5xl md:text-6xl font-serif font-normal leading-[1.08] text-white tracking-tight"
+              className="text-[2.2rem] min-[375px]:text-[2.6rem] sm:text-5xl md:text-6xl font-serif font-normal leading-[1.08] text-white tracking-tight"
             >
               Your Next Car
               <br />
