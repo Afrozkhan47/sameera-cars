@@ -1,7 +1,8 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { GoogleAnalytics } from "@next/third-parties/google";
+import type { Metadata, Viewport } from "next"
+import { Geist, Geist_Mono } from "next/font/google"
+import { GoogleAnalytics } from "@next/third-parties/google"
+import "./globals.css"
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -14,6 +15,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sameeracars.vercel.app"),
+
+  verification: {
+    google: "qledBtheGekXwGQ3mpuFlpVNRDtiWWnSqLG0hLyVaUc",
+  },
 
   title: {
     default: "Sameera Cars | Verified Pre-Owned Cars in Pune",
@@ -74,7 +79,6 @@ export const metadata: Metadata = {
     title: "Sameera Cars | Verified Pre-Owned Cars in Pune",
     description:
       "Browse verified pre-owned cars in Pune with transparent pricing, inspected quality, and easy WhatsApp enquiries.",
-
     images: [
       {
         url: "/og-image.png",
@@ -116,7 +120,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-screen w-full overflow-x-hidden flex flex-col">
+      <body className="min-h-screen flex w-full flex-col overflow-x-hidden">
         {children}
         <GoogleAnalytics gaId="G-WGVH9QBH0N" />
       </body>
