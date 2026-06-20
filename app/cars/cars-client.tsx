@@ -11,9 +11,11 @@ import {
   ChevronLeft,
   ChevronRight,
   SearchX,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { urlFor } from "@/lib/sanity"
+import { ShowroomSection } from "@/components/ShowroomSection"
 type FilterKey =
   | "all"
   | "suv"
@@ -184,7 +186,7 @@ function FilterPill({
     <button
       onClick={onClick}
       className={cn(
-        "relative shrink-0 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300",
+        "relative shrink-0 rounded-full px-4 py-2 md:px-6 md:py-3 text-[13px] md:text-sm font-medium transition-all duration-300",
         isActive
           ? "bg-zinc-900 text-white shadow-md"
           : "text-zinc-600 hover:-translate-y-[2px] hover:bg-white/80 hover:text-zinc-900 hover:shadow-md"
@@ -243,7 +245,7 @@ function CarCard({ car }: { car: SanityCar }) {
           <h2 className="line-clamp-1 text-[24px] font-semibold tracking-[-0.04em] text-zinc-900">
             {car.title}
           </h2>
-          <p className="mt-1 text-[40px] md:text-[44px] font-bold leading-none tracking-[-0.05em] text-zinc-950">
+          <p className="mt-1 text-[32px] sm:text-[40px] md:text-[44px] font-bold leading-none tracking-tighter text-zinc-950">
             {formatPrice(car.price)}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -281,8 +283,17 @@ export default function CarsClient({
   const [searchQuery, setSearchQuery] = React.useState("")
   const [selectedBrand, setSelectedBrand] = React.useState<string>("all")
   const [isBrandOpen, setIsBrandOpen] = React.useState(false)
+  const [sortBy, setSortBy] = React.useState<"featured" | "price-asc" | "price-desc" | "newest" | "oldest">("featured")
+  const [priceRange, setPriceRange] = React.useState<[number, number] | null>(null)
+  const [tempPriceRange, setTempPriceRange] = React.useState<[number, number]>([200000, 1500000])
+  const [isSortOpen, setIsSortOpen] = React.useState(false)
+  const [isPriceOpen, setIsPriceOpen] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
+  const sortRef = React.useRef<HTMLDivElement>(null)
+  const priceRef = React.useRef<HTMLDivElement>(null)
+
+  const formatLakh = (v: number) => "₹" + (v / 100000).toFixed(1).replace(".0", "") + "L"
 
   React.useEffect(() => {
     setIsLoading(true)
@@ -290,19 +301,38 @@ export default function CarsClient({
       setIsLoading(false)
     }, 300)
     return () => clearTimeout(timer)
-  }, [activeFilter, searchQuery, selectedBrand])
+  }, [activeFilter, searchQuery, selectedBrand, sortBy, priceRange])
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsBrandOpen(false)
       }
+      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+        setIsSortOpen(false)
+      }
+      if (priceRef.current && !priceRef.current.contains(event.target as Node)) {
+        setIsPriceOpen(false)
+      }
     }
-    if (isBrandOpen) {
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsBrandOpen(false)
+        setIsSortOpen(false)
+        setIsPriceOpen(false)
+      }
+    }
+
+    if (isBrandOpen || isSortOpen || isPriceOpen) {
       document.addEventListener("mousedown", handleClickOutside)
+      document.addEventListener("keydown", handleKeyDown)
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [isBrandOpen])
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isBrandOpen, isSortOpen, isPriceOpen])
 
   const brands = React.useMemo(() => {
     const allBrands = initialCars.map((c) => c.brand).filter(Boolean)
@@ -317,8 +347,39 @@ export default function CarsClient({
       `${car.title} ${car.brand}`
         .toLowerCase()
         .includes(searchQuery.toLowerCase())
-    return matchesCat && matchesBrand && matchesSearch
+
+    let matchesPrice = true
+    if (priceRange) {
+      const numericPrice = typeof car.price === "number" ? car.price : Number(String(car.price).replace(/[^\d]/g, ""))
+      if (!Number.isNaN(numericPrice) && numericPrice > 0) {
+        matchesPrice = numericPrice >= priceRange[0] && numericPrice <= priceRange[1]
+      }
+    }
+
+    return matchesCat && matchesBrand && matchesSearch && matchesPrice
   })
+
+  const sortedCars = React.useMemo(() => {
+    const sorted = [...visibleCars]
+    if (sortBy === "price-asc") {
+      sorted.sort((a, b) => {
+        const pA = Number(String(a.price).replace(/[^\d]/g, "")) || 0
+        const pB = Number(String(b.price).replace(/[^\d]/g, "")) || 0
+        return pA - pB
+      })
+    } else if (sortBy === "price-desc") {
+      sorted.sort((a, b) => {
+        const pA = Number(String(a.price).replace(/[^\d]/g, "")) || 0
+        const pB = Number(String(b.price).replace(/[^\d]/g, "")) || 0
+        return pB - pA
+      })
+    } else if (sortBy === "newest") {
+      sorted.sort((a, b) => (b.year || 0) - (a.year || 0))
+    } else if (sortBy === "oldest") {
+      sorted.sort((a, b) => (a.year || 0) - (b.year || 0))
+    }
+    return sorted
+  }, [visibleCars, sortBy])
   const heroCars = React.useMemo(() => {
     if (!initialCars) return []
     const preferredBrands = ["bmw", "volkswagen", "honda", "maruti suzuki", "toyota", "duster"]
@@ -470,64 +531,238 @@ export default function CarsClient({
       <section id="catalogue" className="sticky top-6 z-40 mx-auto max-w-6xl px-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
 
-          <div className="flex flex-1 min-w-0 items-center gap-2 rounded-[32px] border border-white/80 bg-white/60 py-2 pl-2 pr-3 shadow-[0_8px_30px_rgba(0,0,0,0.04)] backdrop-blur-3xl">
-            <div className="relative shrink-0" ref={dropdownRef}>
-              <button
-                onClick={() => setIsBrandOpen(!isBrandOpen)}
-                className={cn(
-                  "relative flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium transition-all duration-300",
-                  selectedBrand !== "all" || isBrandOpen
-                    ? "bg-zinc-900 text-white shadow-md"
-                    : "bg-white/50 text-zinc-600 hover:bg-white/80 hover:text-zinc-900 border border-zinc-200/50"
-                )}
-              >
-                {selectedBrand === "all" ? "All Brands" : selectedBrand}
-                <ChevronRight className={cn("h-4 w-4 transition-transform", isBrandOpen && "rotate-90")} />
-              </button>
-              <AnimatePresence>
-                {isBrandOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute left-0 top-full mt-2 w-[220px] max-h-[300px] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl z-[100]"
-                  >
-                    <button
-                      onClick={() => { setSelectedBrand("all"); setIsBrandOpen(false) }}
-                      className={cn(
-                        "w-full rounded-xl px-4 py-2 text-left text-sm font-medium transition-all",
-                        selectedBrand === "all" ? "bg-zinc-100 text-zinc-900" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
-                      )}
+          <div className="flex w-full flex-col md:flex-row items-stretch gap-2 rounded-[32px] border border-white/80 bg-white/60 py-2 px-2 shadow-[0_8px_30px_rgba(0,0,0,0.04)] backdrop-blur-3xl">
+            {/* Left side: Brand Dropdown and Main Filters */}
+            <div className="flex flex-1 min-w-0 items-center gap-2">
+              <div className="relative shrink-0" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsBrandOpen(!isBrandOpen)}
+                  className={cn(
+                    "relative flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium transition-all duration-300",
+                    selectedBrand !== "all" || isBrandOpen
+                      ? "bg-zinc-900 text-white shadow-md"
+                      : "bg-white/50 text-zinc-600 hover:bg-white/80 hover:text-zinc-900 border border-zinc-200/50"
+                  )}
+                >
+                  {selectedBrand === "all" ? "All Brands" : selectedBrand}
+                  <ChevronRight className={cn("h-4 w-4 transition-transform", isBrandOpen && "rotate-90")} />
+                </button>
+                <AnimatePresence>
+                  {isBrandOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute left-0 top-full mt-2 w-[220px] max-h-[300px] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl z-[100]"
                     >
-                      All Brands
-                    </button>
-                    {brands.map(brand => (
                       <button
-                        key={brand}
-                        onClick={() => { setSelectedBrand(brand); setIsBrandOpen(false) }}
+                        onClick={() => { setSelectedBrand("all"); setIsBrandOpen(false) }}
                         className={cn(
                           "w-full rounded-xl px-4 py-2 text-left text-sm font-medium transition-all",
-                          selectedBrand === brand ? "bg-zinc-100 text-zinc-900" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                          selectedBrand === "all" ? "bg-zinc-100 text-zinc-900" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
                         )}
                       >
-                        {brand}
+                        All Brands
                       </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      {brands.map(brand => (
+                        <button
+                          key={brand}
+                          onClick={() => { setSelectedBrand(brand); setIsBrandOpen(false) }}
+                          className={cn(
+                            "w-full rounded-xl px-4 py-2 text-left text-sm font-medium transition-all",
+                            selectedBrand === brand ? "bg-zinc-100 text-zinc-900" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                          )}
+                        >
+                          {brand}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <div className="flex flex-1 overflow-x-auto no-scrollbar min-w-0">
+                <div className="flex min-w-max items-center gap-2 pr-2">
+                  {FILTERS.map((filter) => (
+                    <FilterPill
+                      key={filter.value}
+                      filter={filter}
+                      isActive={activeFilter === filter.value}
+                      onClick={() => setActiveFilter(filter.value)}
+                    />
+                  ))}
+
+                  {/* Active Price Range Chip */}
+                  <AnimatePresence>
+                    {priceRange !== null && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8, width: 0 }}
+                        animate={{ opacity: 1, scale: 1, width: "auto" }}
+                        exit={{ opacity: 0, scale: 0.8, width: 0 }}
+                        className="flex shrink-0 items-center gap-1 rounded-full bg-zinc-900 pl-3 pr-1 py-1.5 md:pl-4 md:pr-2 md:py-2 text-[13px] md:text-sm font-medium text-white shadow-md ml-2"
+                      >
+                        {formatLakh(priceRange[0])} - {formatLakh(priceRange[1])}
+                        <button
+                          onClick={() => {
+                            setPriceRange(null)
+                            setTempPriceRange([200000, 1500000])
+                          }}
+                          className="ml-1 rounded-full p-1 transition-colors hover:bg-white/20"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-1 overflow-x-auto no-scrollbar min-w-0">
-              <div className="flex min-w-max gap-2 pr-2">
-                {FILTERS.map((filter) => (
-                  <FilterPill
-                    key={filter.value}
-                    filter={filter}
-                    isActive={activeFilter === filter.value}
-                    onClick={() => setActiveFilter(filter.value)}
-                  />
-                ))}
+            {/* Right side: Price and Sort */}
+            <div className="flex w-full md:w-auto shrink-0 items-center justify-between md:justify-start gap-2 border-t border-zinc-200/50 md:border-t-0 md:border-l md:pl-3 pt-3 md:pt-0 mt-3 md:mt-0">
+
+              {/* Price Filter */}
+              <div className="relative shrink-0" ref={priceRef}>
+                <button
+                  onClick={() => setIsPriceOpen(!isPriceOpen)}
+                  className={cn(
+                    "relative flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium transition-all duration-300",
+                    isPriceOpen
+                      ? "bg-zinc-900 text-white shadow-md"
+                      : "bg-white/50 text-zinc-600 hover:bg-white/80 hover:text-zinc-900 border border-zinc-200/50"
+                  )}
+                >
+                  Price
+                  <ChevronRight className={cn("h-4 w-4 transition-transform", isPriceOpen && "rotate-90")} />
+                </button>
+                <AnimatePresence>
+                  {isPriceOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute left-0 md:left-auto md:right-0 top-full mt-2 w-[calc(100vw-48px)] sm:w-[280px] rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl z-[100]"
+                    >
+                      <div className="mb-4 flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-zinc-900">Price Range</h4>
+                        <span className="text-sm font-medium text-[#b48a47]">
+                          {formatLakh(tempPriceRange[0])} — {formatLakh(tempPriceRange[1])}
+                        </span>
+                      </div>
+
+                      <div className="relative mb-6 h-6 w-full flex items-center">
+                        <div className="absolute h-1.5 w-full rounded-full bg-zinc-100 overflow-hidden">
+                          <div
+                            className="absolute h-full bg-[#b48a47]"
+                            style={{
+                              left: `${((tempPriceRange[0] - 200000) / 1300000) * 100}%`,
+                              right: `${100 - ((tempPriceRange[1] - 200000) / 1300000) * 100}%`
+                            }}
+                          />
+                        </div>
+                        <input
+                          type="range"
+                          min={200000}
+                          max={1500000}
+                          step={50000}
+                          value={tempPriceRange[0]}
+                          onChange={(e) => {
+                            const val = Math.min(Number(e.target.value), tempPriceRange[1] - 50000)
+                            setTempPriceRange([val, tempPriceRange[1]])
+                          }}
+                          className="absolute w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#b48a47] [&::-webkit-slider-thumb]:shadow-md"
+                        />
+                        <input
+                          type="range"
+                          min={200000}
+                          max={1500000}
+                          step={50000}
+                          value={tempPriceRange[1]}
+                          onChange={(e) => {
+                            const val = Math.max(Number(e.target.value), tempPriceRange[0] + 50000)
+                            setTempPriceRange([tempPriceRange[0], val])
+                          }}
+                          className="absolute w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#b48a47] [&::-webkit-slider-thumb]:shadow-md"
+                        />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setTempPriceRange([200000, 1500000])
+                            setPriceRange(null)
+                            setIsPriceOpen(false)
+                          }}
+                          className="flex-1 rounded-xl bg-zinc-100 py-2.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-200"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPriceRange(tempPriceRange)
+                            setIsPriceOpen(false)
+                          }}
+                          className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Sort By Dropdown */}
+              <div className="relative shrink-0" ref={sortRef}>
+                <button
+                  onClick={() => setIsSortOpen(!isSortOpen)}
+                  className={cn(
+                    "relative flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium transition-all duration-300",
+                    isSortOpen
+                      ? "bg-zinc-900 text-white shadow-md"
+                      : "bg-white/50 text-zinc-600 hover:bg-white/80 hover:text-zinc-900 border border-zinc-200/50"
+                  )}
+                >
+                  Sort By: {
+                    sortBy === "featured" ? "Featured" :
+                      sortBy === "price-asc" ? "Low → High" :
+                        sortBy === "price-desc" ? "High → Low" :
+                          sortBy === "newest" ? "Newest" : "Oldest"
+                  }
+                  <ChevronRight className={cn("h-4 w-4 transition-transform", isSortOpen && "rotate-90")} />
+                </button>
+                <AnimatePresence>
+                  {isSortOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 top-full mt-2 w-[calc(100vw-48px)] sm:w-[180px] rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl z-[100]"
+                    >
+                      {[
+                        { id: "featured", label: "Featured" },
+                        { id: "price-asc", label: "Price: Low → High" },
+                        { id: "price-desc", label: "Price: High → Low" },
+                        { id: "newest", label: "Newest First" },
+                        { id: "oldest", label: "Oldest First" },
+                      ].map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => {
+                            setSortBy(option.id as any)
+                            setIsSortOpen(false)
+                          }}
+                          className={cn(
+                            "w-full rounded-xl px-4 py-2 text-left text-sm font-medium transition-all",
+                            sortBy === option.id ? "bg-zinc-100 text-zinc-900" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                          )}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -550,7 +785,7 @@ export default function CarsClient({
           <div className="flex flex-col items-start md:items-end">
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold tracking-[-0.05em] text-[#b48a47] md:text-4xl">
-                {visibleCars.length}
+                {sortedCars.length}
               </span>
 
               <span className="text-sm font-medium text-zinc-500">
@@ -561,51 +796,56 @@ export default function CarsClient({
         </div>
         {isLoading ? (
           <div className="grid grid-cols-1 gap-12 md:grid-cols-2 xl:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <SkeletonCard key={i} />
-              ))}
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : sortedCars.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center py-20 text-center"
+          >
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100 mb-6">
+              <SearchX className="h-8 w-8 text-zinc-400" />
             </div>
-          ) : visibleCars.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center justify-center py-20 text-center"
+            <h3 className="text-2xl font-semibold text-zinc-900 mb-2">No vehicles found</h3>
+            <p className="text-zinc-500 mb-8 max-w-sm">
+              Try another brand, category or search term to find what you're looking for.
+            </p>
+            <button
+              onClick={() => {
+                setSearchQuery("")
+                setActiveFilter("all")
+                setSelectedBrand("all")
+                setPriceRange(null)
+                setTempPriceRange([200000, 1500000])
+                setSortBy("featured")
+              }}
+              className="rounded-full bg-zinc-900 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-zinc-800 shadow-md hover:scale-105 active:scale-95"
             >
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100 mb-6">
-                <SearchX className="h-8 w-8 text-zinc-400" />
-              </div>
-              <h3 className="text-2xl font-semibold text-zinc-900 mb-2">No vehicles found</h3>
-              <p className="text-zinc-500 mb-8 max-w-sm">
-                Try another brand, category or search term to find what you're looking for.
-              </p>
-              <button
-                onClick={() => {
-                  setSearchQuery("")
-                  setActiveFilter("all")
-                  setSelectedBrand("all")
-                }}
-                className="rounded-full bg-zinc-900 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-zinc-800 shadow-md hover:scale-105 active:scale-95"
-              >
-                Clear Filters
-              </button>
+              Clear Filters
+            </button>
+          </motion.div>
+        ) : (
+          <AnimatePresence mode="sync">
+            <motion.div
+              key={activeFilter + searchQuery + selectedBrand}
+              variants={pageVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="grid grid-cols-1 gap-12 md:grid-cols-2 xl:grid-cols-3"
+            >
+              {sortedCars.map((car) => (
+                <CarCard key={car._id} car={car} />
+              ))}
             </motion.div>
-          ) : (
-            <AnimatePresence mode="sync">
-              <motion.div
-                key={activeFilter + searchQuery + selectedBrand}
-                variants={pageVariants}
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                className="grid grid-cols-1 gap-12 md:grid-cols-2 xl:grid-cols-3"
-              >
-                {visibleCars.map((car) => (
-                  <CarCard key={car._id} car={car} />
-                ))}
-              </motion.div>
-            </AnimatePresence>
-          )}
+          </AnimatePresence>
+        )}
       </section>
+
+      <ShowroomSection />
 
     </main>
   )

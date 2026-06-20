@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { GoogleAnalytics } from "@next/third-parties/google"
+import { Footer } from "@/components/Footer"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -120,9 +121,47 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
+
       <body className="min-h-screen flex w-full flex-col overflow-x-hidden">
         {children}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "AutoDealer",
+
+              name: "Sameera Cars",
+
+              image: "https://sameeracars.vercel.app/logo.png",
+
+              url: "https://sameeracars.vercel.app",
+
+              telephone: "+919226394233",
+
+              address: {
+                "@type": "PostalAddress",
+
+                streetAddress:
+                  "Police Station Road, Near Yerwada, Mahindra Society",
+
+                addressLocality: "Pune",
+
+                addressRegion: "Maharashtra",
+
+                postalCode: "411006",
+
+                addressCountry: "IN",
+              },
+
+              sameAs: [
+                "https://www.instagram.com/sameeracarspune/"
+              ],
+            }),
+          }}
+        />
         <GoogleAnalytics gaId="G-WGVH9QBH0N" />
+        <Footer />
       </body>
     </html>
   );
