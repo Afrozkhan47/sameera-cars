@@ -479,7 +479,7 @@ export default function CarDetail({
 
                     <ShieldCheck className="h-4 w-4 text-green-600" />
 
-                    Typically replies within 30 minutes !!
+                    Our team is standing by to assist you !!
 
                   </div>
                   <Link
