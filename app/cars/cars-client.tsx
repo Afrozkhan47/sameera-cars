@@ -58,6 +58,7 @@ const FILTERS: { label: string; value: FilterKey }[] = [
   { label: "Petrol", value: "petrol" },
   { label: "Diesel", value: "diesel" },
   { label: "CNG", value: "cng" },
+  { label: "Electric", value: "electric" },
   { label: "Automatic", value: "automatic" },
   { label: "Manual", value: "manual" },
 ]
@@ -166,6 +167,7 @@ function getCarCategories(car: SanityCar): Set<FilterKey> {
   if (fuel.includes("petrol")) categories.add("petrol")
   if (fuel.includes("diesel")) categories.add("diesel")
   if (fuel.includes("cng")) categories.add("cng")
+  if (fuel.includes("electric")) categories.add("electric")
   if (trans.includes("automatic")) categories.add("automatic")
   if (trans.includes("manual")) categories.add("manual")
   return categories
